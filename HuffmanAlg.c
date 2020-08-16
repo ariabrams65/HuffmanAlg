@@ -16,11 +16,14 @@ int main(int argc, char *argv[]) {
     }
     FILE *text;
 	
-    text = fopen(argv[1], "r");
+    if ((text = fopen(argv[1], "r")) = NULL) {
+        perror();
+        exit(EXIT_FAILURE); 
+    }
 
-    int c[ASCII + 1];
+    int c[ASCII];
 
-    for (int i = 0; i <= ASCII; i++) {
+    for (int i = 0; i < ASCII; i++) {
 
 	    c[i] = 0;
     }
@@ -38,11 +41,46 @@ int fillc(int *ch, FILE *f) {
    }
 }
 
-struct node {
-    node *next;
-    node *child1;
-    node *child2;
+typedef struct node {
+    Node *next;
+    Node *child1;
+    Node *child2;
 
     int freq;
     char character;
-};
+} Node;
+
+void createlist(int *c, int size, Node *root) {
+
+    int count = 0;
+
+    for (int i = 0; i < size; i++) {
+                
+        if (c[i] > 0) {
+            
+            Node *leaf = (Node *)malloc(sizeof(Node *));
+            leaf->freq = c[i];
+            leaf->character = i;   
+            
+            count++;
+
+            if (count = 0) {
+            
+                root->next = leaf;
+
+            } else {
+                
+                Node *n = (Node *)malloc(sizeof(Node *)); //remeber to free
+
+                *n = *root; 
+
+                for (int i = 0; i < count; i++;) {
+
+                    
+                }
+
+            } 
+        }
+    }
+    
+}   
