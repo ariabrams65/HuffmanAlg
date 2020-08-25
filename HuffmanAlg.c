@@ -1,26 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#define ASCII 128
+#include "Huffman.h"
 
-int fillc(int *, FILE *);
+int main(int argc, char *argv[]) {	
 
-typedef struct Node
-{ 
-    struct Node *next;
-    struct Node *child1;
-    struct Node *child2;
-    struct Node *parent;
-
-    int freq;
-    char character;
-} Node;
-
-Node *createlist(int *, int);
-Node *createtree(Node *);
-void compress(Node *, FILE *);
-
-int main(int argc, char *argv[]) {
-	
     if (argc > 2) {
      
         fprintf(stderr, "error: too many arguments\nformat: HuffmanAlg 'filename'\n");
@@ -40,19 +21,42 @@ int main(int argc, char *argv[]) {
     int c[ASCII];
 
     for (int i = 0; i < ASCII; i++) {
-     
-	    c[i] = 0;
+        c[i] = 0;
+    } 
+    fill_c(c, text);
+    Node *s = create_list(c, ASCII);
+    Node *t = create_tree(s);
+
+    Code *codes[ASCII];
+
+    Code g;
+    g.size = 0;
+    for (int i = 0; i < ASCII; i++) {
+        codes[i] = NULL;
     }
-    fillc(c, text);
-    Node *s = createlist(c, sizeof(c) / sizeof(c[0]));
-    Node *t = createtree(s);
+    create_codes(codes, t, g);
 
-    compress(t, text);
-
+    int lnodes = 0;
+    for (int i = 0; i < ASCII; i++) {
+        if (codes[i] != NULL) {
+            lnodes++; 
+        }
+    }
+    int inodes = lnodes - 1;
+   
+    int tsize = inodes + (9 * lnodes); 
+   
+    uint32_t bsize; 
+    if (tsize % 8 != 0) {
+        bsize = (tsize / 8) + 1;
+    } else {
+        bsize = tsize / 8; 
+    }
+    print_header(t, bsize); 
     return 0;
 }
 
-int fillc(int *ch, FILE *f) {
+int fill_c(int *ch, FILE *f) {
     
    int c;
 
@@ -62,9 +66,7 @@ int fillc(int *ch, FILE *f) {
    }
 }
 
-Node *putnode(Node *, Node *);
-
-Node *createlist(int *c, int size) {          /*returns the initial node of a linked list*/
+Node *create_list(int *c, int size) {          /*returns the initial node of a linked list*/
 
     int count = 0;
     Node *initial;
@@ -92,14 +94,14 @@ Node *createlist(int *c, int size) {          /*returns the initial node of a li
                 initial = leaf;
             } else {
                 
-                initial = putnode(initial, leaf); 
+                initial = put_node(initial, leaf); 
             }
         }
     }   
     return initial;
 } 
 
-Node *putnode(Node *initial, Node *leaf) {        /*puts leaf node within linked list starting at initial in ascending order based on frequency*/     
+Node *put_node(Node *initial, Node *leaf) {        /*puts leaf node within linked list starting at initial in ascending order based on frequency*/     
                                                 
     Node *cur = initial;
     Node *prev = initial; 
@@ -128,7 +130,7 @@ Node *putnode(Node *initial, Node *leaf) {        /*puts leaf node within linked
     return initial;                                                                                          
 }
 
-Node *combinenodes(Node *a, Node *b) {
+Node *combine_nodes(Node *a, Node *b) {
 
     Node *p;
     if ((p = malloc(sizeof(Node))) == NULL) {
@@ -140,30 +142,65 @@ Node *combinenodes(Node *a, Node *b) {
     p->child2 = b;
     p->freq = a->freq + b->freq;
 
-    a->parent = p;
-    b->parent = p;
-
     return p;
 }
 
-Node *createtree(Node *initial) {  
+Node *create_tree(Node *initial) {  
 
     while (1) {
         
-        Node *parent = combinenodes(initial, initial->next); 
+        Node *parent = combine_nodes(initial, initial->next); 
         if (parent->child1 == NULL) {
             printf("error");
         }
         
-        initial = (initial->next)->next;
+        initial = initial->next->next;
         
         if (initial == NULL) { 
             return parent;
         }
-        initial = putnode(initial, parent);
+        initial = put_node(initial, parent);
     }
 }
 
-void compress(Node *tree, FILE *file) {
+void create_codes(Code **table, Node *tree, Code c) {
+    
+    if (tree->child1 == NULL) {
+        if ((table[tree->character] = malloc(sizeof(Code))) == NULL) {
+            perror(NULL);
+            exit(EXIT_FAILURE);
+        }
+        *table[tree->character] = c;
+    } else {
+        c.size++;    
+        c.code <<= 1;
+        create_codes(table, tree->child1, c);
+        c.code += 1;
+        create_codes(table, tree->child2, c);
+    }
+}
+
+void print_header(Node *tree, uint32_t hsize) {
+    
+    uint32_t chars = tree->freq;
+    FILE *a = fopen("test11", "wb+"); 
+
+    fwrite(&hsize, sizeof(uint32_t), 1, a);
+    fwrite(&chars, sizeof(uint32_t), 1, a);
+
+    int ptr;
+printf("%d\n", ptr);
+   
+  int x = fread(&ptr, sizeof(int), 1, a); //returns eof
+  int b = feof(a); 
+  printf("%d\n", b);
+  printf("%d\n", x);
+   
+    printf("%d", ptr);
+     
+    print_tree(tree);
+}
+
+void print_tree(Node *tree) {
 
 }
