@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     } else if (argc < 2) {
      
-        fprintf(stderr, "error: no argument found\nformat: HuffmanAlg 'filenam'\n");
+        fprintf(stderr, "error: no argument found\nformat: HuffmanAlg 'filename'\n");
         exit(EXIT_FAILURE);
     }
     FILE *text;
@@ -23,51 +23,40 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < ASCII; i++) {
         c[i] = 0;
     } 
-    fill_c(c, text);
+    int lnodes = fill_c(c, text);
     Node *s = create_list(c, ASCII);
     Node *t = create_tree(s);
 
     Code *codes[ASCII];
-
     Code g;
     g.size = 0;
-    for (int i = 0; i < ASCII; i++) {
-        codes[i] = NULL;
-    }
     create_codes(codes, t, g);
 
-    int lnodes = 0;
-    for (int i = 0; i < ASCII; i++) {
-        if (codes[i] != NULL) {
-            lnodes++; 
-        }
-    }
-    int inodes = lnodes - 1;
-   
-    int tsize = inodes + (9 * lnodes); 
-   
-    uint32_t bsize; 
-    if (tsize % 8 != 0) {
-        bsize = (tsize / 8) + 1;
-    } else {
-        bsize = tsize / 8; 
-    }
-    print_header(t, bsize); 
+    print_header(t, get_header_size(lnodes)); 
+    print_char_codes(codes);
+
+
     return 0;
 }
 
 int fill_c(int *ch, FILE *f) {
     
-   int c;
+    int i = 0;
+    int c;
 
-   while ((c = fgetc(f)) != EOF) {
-    
-       ch[c]++; 
-   }
+    while ((c = fgetc(f)) != EOF) {
+         
+        if (ch[c] == 0) {
+            
+            i++; 
+        }
+        ch[c]++; 
+    }
+    return i;
 }
 
 Node *create_list(int *c, int size) {          /*returns the initial node of a linked list*/
-
+    
     int count = 0;
     Node *initial;
 
@@ -183,24 +172,81 @@ void create_codes(Code **table, Node *tree, Code c) {
 void print_header(Node *tree, uint32_t hsize) {
     
     uint32_t chars = tree->freq;
-    FILE *a = fopen("test11", "wb+"); 
 
-    fwrite(&hsize, sizeof(uint32_t), 1, a);
-    fwrite(&chars, sizeof(uint32_t), 1, a);
+    fwrite(&hsize, sizeof(uint32_t), 1, stdout);
+    fwrite(&chars, sizeof(uint32_t), 1, stdout);
 
-    int ptr;
-printf("%d\n", ptr);
-   
-  int x = fread(&ptr, sizeof(int), 1, a); //returns eof
-  int b = feof(a); 
-  printf("%d\n", b);
-  printf("%d\n", x);
-   
-    printf("%d", ptr);
-     
     print_tree(tree);
+    flush_bits();
 }
 
-void print_tree(Node *tree) {
+Code c0 = {1, 0};
+Code c1 = {1, 1};
 
+void print_tree(Node *tree) {
+    
+    if (tree->child1 == NULL) {
+        
+        print_code(c1);
+        Code c = {8 , tree->character};
+        print_code(c);
+    } else {
+        
+        print_code(c0);
+        print_tree(tree->child1);
+        print_tree(tree->child2);
+    }
+}
+
+uint32_t get_header_size(int l) {
+    
+    int inodes = l - 1;
+   
+    int tsize = inodes + (9 * l); 
+
+    uint32_t bsize;
+    bsize = tsize % 8 != 0 ? (tsize / 8) + 1 : tsize / 8; 
+
+    return bsize;
+}
+
+char buf = 0;
+int space = 8;
+
+void print_code(Code c) {
+    
+    if (c.size - space >= 0) {
+         
+        Code d = c;
+        c.code >>= c.size - space;
+        buf |= c.code;
+        c = d;
+        c.size -= space;
+        printf("%c", buf);
+        buf = 0;
+        space = 8;
+
+        if (c.size > 0) {
+            
+            print_code(c);
+        }
+    } else {
+         
+        c.code <<= space - c.size;
+        buf |= c.code;
+        space -= c.size;
+    }
+}
+
+void flush_bits() {
+    
+    if (space < 8) {
+        
+        printf("%c", buf);
+    }
+}
+
+void print_char_codes(Code ** table) {
+    
+    
 }

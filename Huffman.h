@@ -32,3 +32,11 @@ void create_codes(Code **, Node *, Code);
 void print_header(Node *, uint32_t);
 
 void print_tree(Node *);
+
+void print_code(Code c);
+
+void flush_bits();
+
+void print_char_codes(Code** table);
+
+uint32_t get_header_size(int);
